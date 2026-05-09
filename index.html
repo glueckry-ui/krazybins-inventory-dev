@@ -448,17 +448,12 @@ ol.inst strong{color:var(--black);font-weight:700}
         <button class="btn btn-d" style="margin-top:12px" onclick="copyScript()">Copy Apps Script Code</button>
       </div>
       <div class="card">
-        <div class="ctitle g">Invoice Scanning Setup</div>
-        <p style="font-size:12px;color:var(--muted);font-weight:500;line-height:1.5;margin-bottom:12px">Scanning invoices uses OpenAI GPT-4o mini. After updating the Apps Script code above, add your API key:</p>
-        <ol class="inst">
-          <li>Open your project at <strong>script.google.com</strong></li>
-          <li>Click the <strong>gear icon</strong> (Project Settings)</li>
-          <li>Scroll to <strong>Script Properties</strong> &rarr; Add property</li>
-          <li>Property name: <strong>OPENAI_KEY</strong></li>
-          <li>Value: your OpenAI API key (from <strong>platform.openai.com</strong>)</li>
-          <li><strong>Redeploy</strong> &rarr; Manage deployments &rarr; Edit &rarr; New version</li>
-        </ol>
-        <div class="nxt" style="margin-top:10px">Cost: ~$0.001 per scan &mdash; fractions of a cent</div>
+        <div class="ctitle g">Invoice Scanning</div>
+        <div class="fg">
+          <label class="flbl">OpenAI API Key</label>
+          <input type="password" class="fi" id="okey" placeholder="sk-..." oninput="saveOpenaiKey()" autocomplete="off">
+          <p style="font-size:11px;color:var(--muted);margin-top:7px;line-height:1.5;font-weight:500">Get a key at <strong>platform.openai.com</strong> &mdash; ~$0.001 per scan. Stored only on this device.</p>
+        </div>
       </div>
       <div class="card">
         <div class="ctitle g">Export History</div>
@@ -577,7 +572,7 @@ const DEFAULT_TARGETS = {
     .split('CATOPTS').join(catOpts).split('STOREOPTS').join(storeOpts);
 })();
 
-let S = { store:'Akron', events:[], transfers:[], validated:{}, sheetUrl:'', exportHistory:[], targets:{}, orders:[], receipts:[] };
+let S = { store:'Akron', events:[], transfers:[], validated:{}, sheetUrl:'', exportHistory:[], targets:{}, orders:[], receipts:[], openaiKey:'' };
 let editingId=null, editingXfer=null;
 let confirmCallback=null;
 let orderDetailInvoice=null, showClosed=false;
@@ -588,6 +583,7 @@ function load(){ try{ const d=localStorage.getItem('kb9'); if(d) S={...S,...JSON
 load();
 setToday('r-date'); setToday('p-date'); setToday('t-date'); setToday('po-date');
 if(S.sheetUrl) document.getElementById('surl').value=S.sheetUrl;
+if(S.openaiKey) document.getElementById('okey').value=S.openaiKey;
 document.getElementById('store-lbl').textContent=S.store;
 syncXferFrom();
 buildSList();
@@ -1657,7 +1653,6 @@ function buildScript(){
   const code = [
     'function doPost(e) {',
     '  var d = JSON.parse(e.postData.contents);',
-    '  if (d.type === "scan") return handleScan(d);',
     '  var ss = SpreadsheetApp.getActiveSpreadsheet();',
     '  var wp = ss.getSheetByName("Weekly Processed");',
     '  if (!wp) { wp = ss.insertSheet("Weekly Processed"); wp.appendRow(["Week Fri","Week Thu","Store","Category","Qty Processed","Exported At"]); }',
@@ -1671,28 +1666,6 @@ function buildScript(){
     '  if (last > 1) bal.deleteRows(2, last - 1);',
     '  d.backRows.forEach(function(r) { bal.appendRow(r.concat([d.exportedAt])); });',
     '  return ContentService.createTextOutput(JSON.stringify({status:"ok"})).setMimeType(ContentService.MimeType.JSON);',
-    '}',
-    '',
-    'function handleScan(d) {',
-    '  var key = PropertiesService.getScriptProperties().getProperty("OPENAI_KEY");',
-    '  if (!key) return ContentService.createTextOutput(JSON.stringify({error:"Add OPENAI_KEY to Script Properties"})).setMimeType(ContentService.MimeType.JSON);',
-    '  var cats = "Bedding,Children,Decor,Furniture,Home and Garden,Home Decor,Luggage,Mixed Lots,Outdoor Furniture,Rugs,Seasonal,Small Appliances,Sports and Outdoor,Storage,Toys";',
-    '  var prompt = "Extract purchase order details from this invoice image. Return ONLY a raw JSON object (no markdown) with these fields:\\n- invoiceNum: invoice or PO number (string)\\n- vendor: vendor or supplier company name (string)\\n- shipper: shipping carrier name, e.g. UPS, FedEx, XPO (string, empty if not found)\\n- date: order or invoice date in YYYY-MM-DD format (string)\\n- pallets: number of pallets as an integer (number, 0 if not found)\\n- category: best match from this list: " + cats;',
-    '  var res = UrlFetchApp.fetch("https://api.openai.com/v1/chat/completions", {',
-    '    method: "post",',
-    '    headers: {"Content-Type": "application/json", "Authorization": "Bearer " + key},',
-    '    payload: JSON.stringify({',
-    '      model: "gpt-4o-mini",',
-    '      messages: [{role: "user", content: [',
-    '        {type: "text", text: prompt},',
-    '        {type: "image_url", image_url: {url: "data:image/jpeg;base64," + d.image, detail: "low"}}',
-    '      ]}],',
-    '      max_tokens: 300',
-    '    })',
-    '  });',
-    '  var out = JSON.parse(res.getContentText());',
-    '  var content = out.choices[0].message.content.trim().replace(/```json\\n?|\\n?```/g, "").trim();',
-    '  return ContentService.createTextOutput(content).setMimeType(ContentService.MimeType.JSON);',
     '}'
   ].join('\n');
   document.getElementById('scrbox').textContent = code;
@@ -1700,8 +1673,10 @@ function buildScript(){
 function copyScript(){ navigator.clipboard.writeText(document.getElementById('scrbox').textContent).then(()=>toast('Script copied!')).catch(()=>toast('Select and copy the code above')); }
 
 // ── INVOICE SCAN ──────────────────────────────────────────────
+function saveOpenaiKey(){ S.openaiKey=document.getElementById('okey').value.trim(); save(); }
+
 function scanInvoice(){
-  if(!S.sheetUrl){ showToast('Add your Apps Script URL in the Export tab first','err'); return; }
+  if(!S.openaiKey){ showToast('Add your OpenAI API key in the Export tab first','err'); return; }
   document.getElementById('scan-input').click();
 }
 
@@ -1711,17 +1686,27 @@ async function handleScanFile(input){
   btn.textContent='Scanning…'; btn.disabled=true;
   try{
     const b64=await compressImage(file,1024);
-    const res=await fetch(S.sheetUrl,{
+    const cats=CATS.join(', ');
+    const prompt='Extract purchase order details from this invoice image. Return ONLY a raw JSON object (no markdown) with these fields:\n- invoiceNum: invoice or PO number (string)\n- vendor: vendor or supplier company name (string)\n- shipper: shipping carrier name e.g. UPS, FedEx, XPO (string, empty if not found)\n- date: order date in YYYY-MM-DD format (string)\n- pallets: number of pallets as integer (number, 0 if not found)\n- category: best match from: '+cats;
+    const res=await fetch('https://api.openai.com/v1/chat/completions',{
       method:'POST',
-      headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify({type:'scan',image:b64}),
-      redirect:'follow'
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+S.openaiKey},
+      body:JSON.stringify({
+        model:'gpt-4o-mini',
+        messages:[{role:'user',content:[
+          {type:'text',text:prompt},
+          {type:'image_url',image_url:{url:'data:image/jpeg;base64,'+b64,detail:'low'}}
+        ]}],
+        max_tokens:300
+      })
     });
-    const data=await res.json();
-    if(data.error){ showToast(data.error,'err'); return; }
+    if(!res.ok){ const e=await res.json(); showToast((e.error&&e.error.message)||'OpenAI error '+res.status,'err'); return; }
+    const out=await res.json();
+    const raw=out.choices[0].message.content.trim().replace(/```json\n?|\n?```/g,'').trim();
+    const data=JSON.parse(raw);
     fillScanResult(data);
   }catch(e){
-    showToast('Scan failed — check your Apps Script URL and API key','err');
+    showToast('Scan failed — check your API key in the Export tab','err');
   }finally{
     btn.textContent='📷 Scan Invoice Photo'; btn.disabled=false;
     input.value='';
