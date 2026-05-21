@@ -339,10 +339,10 @@ ol.inst strong{color:var(--black);font-weight:700}
         </button>
       </div>
 
-      <div class="sdiv">Back inventory by category</div>
+      <div class="sdiv">Back stock by category</div>
       <div class="card" style="padding:0;overflow:hidden">
         <table class="cat-totals">
-          <thead><tr><th>Category</th><th class="num">Recv</th><th class="num">Xfr In</th><th class="num">Xfr Out</th><th class="num">Proc</th><th class="num">Back Inv</th></tr></thead>
+          <thead><tr><th>Category</th><th class="num">Received</th><th class="num">Xfr In</th><th class="num">Xfr Out</th><th class="num">Moved</th><th class="num">Back Stock</th></tr></thead>
           <tbody id="cat-body"></tbody>
         </table>
       </div>
@@ -407,7 +407,7 @@ ol.inst strong{color:var(--black);font-weight:700}
       <div class="ehero">
         <div class="elogo">Krazy<em>Bins</em></div>
         <div class="etag">Google Sheets Export</div>
-        <div class="esub">Auto-sends every Thursday at 5pm — weekly processed report + back inventory balance</div>
+        <div class="esub">Auto-sends every Thursday at 5pm — weekly processed report + back stock balance</div>
       </div>
       <div class="card">
         <div class="ctitle g">Sheet Connection</div>
@@ -515,7 +515,7 @@ ol.inst strong{color:var(--black);font-weight:700}
 <div class="sht-overlay" id="sht-receive" onclick="closeSheet('receive',event)">
   <div class="sht-panel p-top">
     <div class="sht-handle"></div>
-    <div class="sht-title recv">Receive into Back Inventory</div>
+    <div class="sht-title recv">Receive into Back Stock</div>
     <div class="frow2 fg">
       <div><label class="flbl">Date received</label><input type="date" class="fi" id="r-date" onchange="validateRDate()"></div>
       <div><label class="flbl">Category</label><select class="fs" id="r-cat">CATOPTS</select></div>
@@ -545,7 +545,7 @@ ol.inst strong{color:var(--black);font-weight:700}
     <div class="fg">
       <label class="flbl">Quantity</label>
       <input type="number" class="fi" id="p-qty" min="1" placeholder="0" inputmode="numeric" oninput="updateProcHint()">
-      <div id="p-qty-hint" class="avail-hint show ok">Select a category to see available back inventory</div>
+      <div id="p-qty-hint" class="avail-hint show ok">Select a category to see available back stock</div>
     </div>
     <div class="fg"><label class="flbl">Note (optional)</label><input type="text" class="fi" id="p-note" placeholder="e.g. Moved to floor Friday"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -618,8 +618,8 @@ ol.inst strong{color:var(--black);font-weight:700}
 <div class="modal-overlay" id="targets-modal" onclick="closeTargetsModal(event)">
   <div class="modal" style="max-height:75vh;overflow-y:auto">
     <div class="modal-handle"></div>
-    <div class="modal-title">Par Levels — <span id="targets-modal-store"></span></div>
-    <p style="font-size:11px;color:var(--muted);font-weight:500;margin-bottom:12px;line-height:1.5">Target back inventory per category. Drives purchasing recommendations in Reports.</p>
+    <div class="modal-title">Targets — <span id="targets-modal-store"></span></div>
+    <p style="font-size:11px;color:var(--muted);font-weight:500;margin-bottom:12px;line-height:1.5">Target back stock per category. Drives purchasing recommendations in Reports.</p>
     <div id="targets-modal-body"></div>
     <div class="modal-btns" style="margin-top:14px">
       <button class="btn btn-d" onclick="closeTargetsModal()">Cancel</button>
@@ -707,7 +707,7 @@ function parseQty(id){ return Math.floor(Math.abs(parseFloat(document.getElement
 
 // ── GUARDRAIL HELPERS ─────────────────────────────────────────
 
-// Returns back inventory for a store+category (excluding a given event/transfer id when editing)
+// Returns back stock for a store+category (excluding a given event/transfer id when editing)
 function backForCat(store, cat, excludeEventId, excludeXferId){
   const cs = catSummaryExcl(store, excludeEventId, excludeXferId);
   return (cs[cat]||{recv:0,proc:0,tin:0,tout:0});
@@ -777,7 +777,7 @@ function validateRQty(){
   const hint=document.getElementById('r-qty-hint');
   if(qty>0){
     hint.className='avail-hint show info';
-    hint.textContent='Quantity looks good — '+qty+' items will be added to back inventory';
+    hint.textContent='Quantity looks good — '+qty+' items will be added to back stock';
   } else {
     hint.className='avail-hint';
   }
@@ -791,7 +791,7 @@ function updateProcHint(){
   const btn=document.getElementById('p-submit');
   if(avail<=0){
     hint.className='avail-hint show err';
-    hint.textContent='No back inventory for '+cat+' at '+S.store;
+    hint.textContent='No back stock for '+cat+' at '+S.store;
     btn.disabled=true; return;
   }
   if(qty>avail){
@@ -805,7 +805,7 @@ function updateProcHint(){
     btn.disabled=false; return;
   }
   hint.className='avail-hint show ok';
-  hint.textContent=avail+' '+cat+' available in back inventory at '+S.store;
+  hint.textContent=avail+' '+cat+' available in back stock at '+S.store;
   btn.disabled=false;
 }
 
@@ -825,7 +825,7 @@ function updateXferHint(){
   const avail=availableBack(from,cat,null,null);
   if(avail<=0){
     hint.className='avail-hint show err';
-    hint.textContent='No '+cat+' in back inventory at '+from;
+    hint.textContent='No '+cat+' in back stock at '+from;
     btn.disabled=true; return;
   }
   if(qty>avail){
@@ -1016,7 +1016,7 @@ function _doAddRecv(date,cat,qty,note){
   document.getElementById('r-note').value='';
   save(); renderInventory(); setTimeout(updateProcHint,50);
   closeSheet('receive');
-  toast('+'+qty+' '+cat+' → back inventory');
+  toast('+'+qty+' '+cat+' → back stock');
 }
 
 // ── ADD PROC ──────────────────────────────────────────────────
@@ -1028,7 +1028,7 @@ function addProc(){
   if(!date||qty<=0){ showToast('Enter a date and a valid quantity','err'); return; }
   if(!validatePDate()) return;
   const avail=availableBack(S.store,cat,null,null);
-  if(avail<=0){ showToast('No '+cat+' in back inventory at '+S.store,'err'); return; }
+  if(avail<=0){ showToast('No '+cat+' in back stock at '+S.store,'err'); return; }
   if(qty>avail){ showToast('Cannot process '+qty+' — only '+avail+' available','err'); return; }
   if(isDayValidated(S.store,date)){
     confirmAction('Day Already Validated','This day has been marked OK. Adding entries will change the balance. Continue?','Add Anyway',()=>{
@@ -1109,7 +1109,7 @@ function addTransfer(){
   if(!date||qty<=0){ showToast('Enter a date and a valid quantity','err'); return; }
   if(!validateTDate()) return;
   const avail=availableBack(from,cat,null,null);
-  if(avail<=0){ showToast('No '+cat+' in back inventory at '+from,'err'); return; }
+  if(avail<=0){ showToast('No '+cat+' in back stock at '+from,'err'); return; }
   if(qty>avail){ showToast('Only '+avail+' '+cat+' available at '+from,'err'); return; }
   if(isDayValidated(from,date)||isDayValidated(to,date)){
     confirmAction('Validated Day Affected','One or both stores have this day validated. This transfer will change their balances. Continue?','Transfer Anyway',()=>{
@@ -1190,7 +1190,7 @@ function renderInventory(){
   const backInv  =totalRecv+totalTin-totalTout-totalProc;
 
   document.getElementById('inv-metrics').innerHTML=
-    mk3('p','p','Back Inv',backInv,'remaining')+
+    mk3('p','p','Back Stock',backInv,'remaining')+
     mk3('a','a','Processed',totalProc,'to floor')+
     mk3('','g','Received',totalRecv,'all time');
 
@@ -1234,10 +1234,10 @@ function renderInventory(){
     const net  =dRecv+dTin-dTout-dProc;
     const vk=store+'__'+date, isV=!!S.validated[vk];
     const parts=[];
-    if(dRecv) parts.push('+'+dRecv+' recv');
+    if(dRecv) parts.push('+'+dRecv+' received');
     if(dTin)  parts.push('+'+dTin+' xfr in');
     if(dTout) parts.push('-'+dTout+' xfr out');
-    if(dProc) parts.push('-'+dProc+' proc');
+    if(dProc) parts.push('-'+dProc+' moved');
 
     return '<div class="tx-block'+(isV?' locked':'')+'">'+
       '<div class="day-hd" onclick="togDay(\'db-'+vk+'\')">'+
@@ -1257,11 +1257,11 @@ function renderInventory(){
             return '<div class="txrow">'+
               '<div class="tx-left">'+
                 '<div class="tx-cat">'+e.cat+'</div>'+
-                '<div class="tx-note">'+(isR?'Received into back':'Processed to front')+(e.note?' &middot; '+e.note:'')+'</div>'+
+                '<div class="tx-note">'+(isR?'Received into back stock':'Moved to floor')+(e.note?' &middot; '+e.note:'')+'</div>'+
               '</div>'+
               '<div class="tx-right2">'+
                 '<div class="tx-qty '+(isR?'pos':'neg')+'">'+(isR?'+':'-')+e.qty+'</div>'+
-                '<span class="pill '+(isR?'pill-recv':'pill-proc')+'">'+(isR?'Recv':'Proc')+'</span>'+
+                '<span class="pill '+(isR?'pill-recv':'pill-proc')+'">'+(isR?'Received':'Moved')+'</span>'+
               '</div>'+
               '<div class="tx-btns">'+
                 '<button class="btn-icon btn-edit" onclick="openEditModal(\''+e.id+'\')">Edit</button>'+
@@ -1277,14 +1277,14 @@ function renderInventory(){
               '</div>'+
               '<div class="tx-right2">'+
                 '<div class="tx-qty '+(isIn?'pos':'neg')+'">'+(isIn?'+':'-')+e.qty+'</div>'+
-                '<span class="pill '+(isIn?'pill-tin':'pill-tout')+'">'+(isIn?'Xfr In':'Xfr Out')+'</span>'+
+                '<span class="pill '+(isIn?'pill-tin':'pill-tout')+'">'+(isIn?'Transfer In':'Transfer Out')+'</span>'+
               '</div>'+
             '</div>';
           }
         }).join('')+
         '<div class="vbar">'+
-          '<span class="vbar-lbl">'+(isV?'&#128274; Validated':'Validate day')+'</span>'+
-          '<button class="btn btn-sm '+(isV?'btn-d':'btn-g')+'" onclick="togVal(\''+vk+'\')">'+(isV?'Unvalidate':'Mark OK')+'</button>'+
+          '<span class="vbar-lbl">'+(isV?'&#128274; Confirmed':'Confirm day')+'</span>'+
+          '<button class="btn btn-sm '+(isV?'btn-d':'btn-g')+'" onclick="togVal(\''+vk+'\')">'+(isV?'Undo':'Confirm Day')+'</button>'+
         '</div>'+
       '</div>'+
     '</div>';
@@ -1564,7 +1564,7 @@ function renderPurchasingRec(){
         '<span class="bcard-title">&#127919; Purchasing Guide</span>'+
         '<button class="btn btn-d btn-sm" onclick="openTargetsModal()" style="font-size:9px;padding:5px 10px;flex-shrink:0">Set Targets</button>'+
       '</div>'+
-      '<div class="bcard-week">'+store+' &mdash; back inventory vs. par levels (includes in-transit pallets)</div>'+
+      '<div class="bcard-week">'+store+' &mdash; back stock vs. targets (includes in-transit pallets)</div>'+
     '</div>';
   if(needBuy.length){
     h+='<div class="bsec"><div class="bsec-ttl p">Buy now ('+needBuy.length+' categor'+(needBuy.length===1?'y':'ies')+')</div>'+
@@ -1587,7 +1587,7 @@ function renderPurchasingRec(){
   }
   h+='<div class="bsec"><div class="bsec-ttl g">All categories</div>'+
     '<div style="overflow-x:auto"><table class="btbl"><thead><tr>'+
-    '<th>Category</th><th class="num">Back Inv</th><th class="num" style="color:var(--blue)">On Order</th><th class="num">Target</th><th class="num">Gap</th>'+
+    '<th>Category</th><th class="num">Back Stock</th><th class="num" style="color:var(--blue)">On Order</th><th class="num">Target</th><th class="num">Gap</th>'+
     '</tr></thead><tbody>'+
     rows.map(r=>{
       const gc=r.gap>0?'var(--red)':r.gap<0?'var(--blue)':'var(--green-dark)';
@@ -1687,7 +1687,7 @@ function renderBalance(){
     html+='</tbody></table></div></div></div>';
   }
 
-  // Per-store back inventory
+  // Per-store back stock
   STORES.forEach(store=>{
     const cs=catSummary(store);
     const aCats=CATS.filter(c=>cs[c].recv||cs[c].tin||cs[c].tout||cs[c].proc);
@@ -1703,7 +1703,7 @@ function renderBalance(){
         '<div class="bcard-week">Report period: '+weekRange+'</div>'+
       '</div>'+
       '<div class="bsec"><div class="bsec-ttl p">Back inventory by category</div>'+
-      '<table class="btbl"><thead><tr><th>Category</th><th class="num">Recv</th><th class="num" style="color:var(--blue)">Xfr In</th><th class="num" style="color:var(--purple)">Xfr Out</th><th class="num">Proc</th><th class="num">Remaining</th></tr></thead><tbody>';
+      '<table class="btbl"><thead><tr><th>Category</th><th class="num">Received</th><th class="num" style="color:var(--blue)">Xfr In</th><th class="num" style="color:var(--purple)">Xfr Out</th><th class="num">Moved</th><th class="num">Remaining</th></tr></thead><tbody>';
     aCats.forEach(c=>{
       const v=cs[c],b=v.recv+v.tin-v.tout-v.proc;
       html+='<tr><td>'+c+'</td><td class="num">'+v.recv+'</td>'+
