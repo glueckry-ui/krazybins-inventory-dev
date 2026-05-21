@@ -277,6 +277,13 @@ ol.inst strong{color:var(--black);font-weight:700}
 .sht-title{font-size:15px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;margin-bottom:18px}
 .sht-title.recv{color:var(--pink)}
 .sht-title.floor{color:var(--amber)}
+/* FAB */
+.fab{position:fixed;bottom:calc(72px + env(safe-area-inset-bottom,0px));right:16px;width:52px;height:52px;border-radius:50%;background:var(--pink);border:none;color:var(--white);font-size:26px;font-weight:900;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(233,42,100,.4);z-index:50;-webkit-appearance:none;transition:opacity .15s}
+.fab.show{display:flex}
+.fab:active{opacity:.85;transform:scale(0.95)}
+/* PENDING DAY BADGE */
+.day-confirm-btn{background:var(--amber);color:var(--white);border:none;border-radius:var(--pill);padding:5px 12px;font-family:'Barlow',sans-serif;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;cursor:pointer;-webkit-appearance:none;flex-shrink:0}
+.day-confirm-btn:active{opacity:.8}
 </style>
 </head>
 <body>
@@ -353,38 +360,21 @@ ol.inst strong{color:var(--black);font-weight:700}
 
     <!-- TRANSFER -->
     <div class="screen" id="screen-transfer">
-      <div class="sdiv">Transfer history</div>
+      <div class="sdiv" style="display:flex;align-items:center;justify-content:space-between;margin-top:0">
+        <span>Transfer History</span>
+        <button class="btn-icon btn-edit" onclick="openSheet('transfer')">+ New Transfer</button>
+      </div>
       <div id="transfer-log"></div>
     </div>
 
     <!-- ORDERS -->
     <div class="screen" id="screen-orders">
       <div id="orders-list-view" style="padding:14px">
-        <div class="card p-brd">
-            <div class="ctitle p">New Purchase Order</div>
-            <input type="file" id="scan-input" accept="image/*" capture="environment" style="display:none" onchange="handleScanFile(this)">
-            <button class="btn btn-b" id="scan-btn" type="button" onclick="scanInvoice()" style="margin-bottom:14px">&#128247; Scan Invoice Photo</button>
-            <div style="font-size:11px;color:var(--muted);font-weight:500;text-align:center;margin:-8px 0 12px;line-height:1.4">Photo your invoice to auto-fill the form &mdash; review fields before saving</div>
-            <div class="frow2 fg">
-              <div><label class="flbl">Date</label><input type="date" class="fi" id="po-date"></div>
-              <div><label class="flbl">Invoice #</label><input type="text" class="fi" id="po-inv" placeholder="e.g. INV-1001"></div>
-            </div>
-            <div class="frow2 fg">
-              <div><label class="flbl">Vendor</label><input type="text" class="fi" id="po-vendor" placeholder="Vendor name"></div>
-              <div><label class="flbl">Shipper</label><input type="text" class="fi" id="po-shipper" placeholder="Shipper name"></div>
-            </div>
-            <div class="frow2 fg">
-              <div><label class="flbl">Category</label><select class="fs" id="po-cat">CATOPTS</select></div>
-              <div><label class="flbl">Pallets Ordered</label><input type="number" class="fi" id="po-pallets" min="1" placeholder="0" inputmode="numeric"></div>
-            </div>
-            <div class="fg"><label class="flbl">Note (optional)</label><input type="text" class="fi" id="po-note" placeholder="optional"></div>
-            <button class="btn btn-p" onclick="addOrder()">+ Create Purchase Order</button>
-          </div>
-          <div class="sdiv" style="display:flex;align-items:center;justify-content:space-between">
-            <span>Purchase Orders</span>
-            <button class="btn-icon" onclick="toggleClosedPOs()" id="btn-show-closed">Show Closed</button>
-          </div>
-          <div id="po-list-content"></div>
+        <div class="sdiv" style="display:flex;align-items:center;justify-content:space-between;margin-top:0">
+          <span>Purchase Orders</span>
+          <button class="btn-icon" onclick="toggleClosedPOs()" id="btn-show-closed">Show Closed</button>
+        </div>
+        <div id="po-list-content"></div>
       </div>
       <div id="orders-detail-view" style="display:none;padding:14px">
         <div id="po-detail-content"></div>
@@ -482,6 +472,42 @@ ol.inst strong{color:var(--black);font-weight:700}
     </ol>
     <div class="scrbox" id="scrbox"></div>
     <button class="btn btn-d" style="margin-top:12px;margin-bottom:0" onclick="copyScript()">Copy Apps Script Code</button>
+  </div>
+</div>
+
+<!-- FAB: New Purchase Order -->
+<button class="fab" id="fab-new-order" onclick="openSheet('neworder')" aria-label="New Order">+</button>
+
+<!-- New Order Sheet -->
+<div class="sht-overlay" id="sht-neworder" onclick="closeSheet('neworder',event)">
+  <div class="sht-panel p-top">
+    <div class="sht-handle"></div>
+    <div class="sht-title recv">New Purchase Order</div>
+    <input type="file" id="scan-input" accept="image/*" capture="environment" style="display:none" onchange="handleScanFile(this)">
+    <button class="btn btn-b" id="scan-btn" type="button" onclick="scanInvoice()" style="margin-bottom:14px">&#128247; Scan Invoice Photo</button>
+    <div style="font-size:11px;color:var(--muted);font-weight:500;text-align:center;margin:-8px 0 12px;line-height:1.4">Photo your invoice to auto-fill the form &mdash; review before saving</div>
+    <div class="frow2 fg">
+      <div><label class="flbl">Order Date</label><input type="date" class="fi" id="po-date"></div>
+      <div><label class="flbl">Invoice #</label><input type="text" class="fi" id="po-inv" placeholder="e.g. INV-1001"></div>
+    </div>
+    <div class="frow2 fg">
+      <div><label class="flbl">Vendor</label><input type="text" class="fi" id="po-vendor" placeholder="Vendor name"></div>
+      <div><label class="flbl">Shipper</label><input type="text" class="fi" id="po-shipper" placeholder="Shipper name"></div>
+    </div>
+    <div class="frow2 fg">
+      <div><label class="flbl">Category</label><select class="fs" id="po-cat">CATOPTS</select></div>
+      <div><label class="flbl">Pallets Ordered</label><input type="number" class="fi" id="po-pallets" min="1" placeholder="0" inputmode="numeric"></div>
+    </div>
+    <div class="fg">
+      <label class="flbl">Est. Delivery Date</label>
+      <input type="date" class="fi" id="po-est-date">
+      <div style="font-size:11px;color:var(--muted);margin-top:5px;font-weight:500">When do you expect this delivery to arrive?</div>
+    </div>
+    <div class="fg"><label class="flbl">Note (optional)</label><input type="text" class="fi" id="po-note" placeholder="optional"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button class="btn btn-d" onclick="closeSheet('neworder')">Cancel</button>
+      <button class="btn btn-p" onclick="addOrder()">+ Create PO</button>
+    </div>
   </div>
 </div>
 
@@ -675,6 +701,7 @@ function openSheet(name){
   const el=document.getElementById('sht-'+name);
   if(el) el.classList.add('open');
   if(name==='floor') setTimeout(updateProcHint,50);
+  if(name==='neworder'){ setToday('po-date'); }
   if(name==='transfer'){ syncXferFrom(); setTimeout(updateXferHint,50); }
   if(name==='settings'){ updateNxt(); renderHist(); }
 }
@@ -926,11 +953,13 @@ function go(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
-  document.getElementById('nb-'+name).classList.add('active');
+  const nb=document.getElementById('nb-'+name); if(nb) nb.classList.add('active');
   document.getElementById('content').scrollTop=0;
+  const fab=document.getElementById('fab-new-order');
+  if(fab) fab.classList.toggle('show', name==='orders');
   if(name==='inventory'){ renderInventory(); setTimeout(updateProcHint,50); }
   if(name==='transfer'){ syncXferFrom(); renderTransferLog(); setTimeout(updateXferHint,50); }
-  if(name==='orders'){ showOrdersList(); setToday('po-date'); }
+  if(name==='orders') showOrdersList();
   if(name==='balance') renderBalance();
   if(name==='export'){ updateNxt(); renderHist(); }
 }
@@ -1223,7 +1252,7 @@ function renderInventory(){
   allItems.forEach(e=>{ if(!byDate[e.date]) byDate[e.date]=[]; byDate[e.date].push(e); });
   const dates=Object.keys(byDate).sort().reverse();
   const logEl=document.getElementById('daily-log');
-  if(!dates.length){ logEl.innerHTML='<div class="empty"><div class="ico">&#128203;</div><p>No entries yet for '+store+'</p></div>'; return; }
+  if(!dates.length){ logEl.innerHTML='<div class="empty"><div class="ico">&#128230;</div><p>No activity yet for '+store+'</p><p style="margin-top:6px;font-size:12px;color:var(--muted)">Tap <strong>Receive</strong> to log your first delivery</p></div>'; return; }
 
   logEl.innerHTML=dates.map(date=>{
     const items=byDate[date];
@@ -1241,13 +1270,14 @@ function renderInventory(){
 
     return '<div class="tx-block'+(isV?' locked':'')+'">'+
       '<div class="day-hd" onclick="togDay(\'db-'+vk+'\')">'+
-        '<div>'+
+        '<div style="flex:1;min-width:0">'+
           '<div class="day-date">'+date+(isV?' &#128274;':'')+'</div>'+
           '<div class="day-meta">'+parts.join(' &middot; ')+'</div>'+
         '</div>'+
-        '<div class="day-right">'+
+        (!isV?'<button class="day-confirm-btn" onclick="event.stopPropagation();togVal(\''+vk+'\')">Confirm</button>':'')+
+        '<div class="day-right" style="margin-left:8px">'+
           '<div class="day-bal">'+(net>=0?'+':'')+net+'</div>'+
-          '<span class="pill '+(isV?'pill-v':'pill-pend')+'">'+(isV?'&#10003; OK':'Pending')+'</span>'+
+          '<span class="pill '+(isV?'pill-v':'pill-pend')+'">'+(isV?'&#10003; Confirmed':'Pending')+'</span>'+
         '</div>'+
       '</div>'+
       '<div class="day-body" id="db-'+vk+'" style="display:none">'+
@@ -1359,13 +1389,14 @@ function addOrder(){
   const shipper=document.getElementById('po-shipper').value.trim();
   const cat=document.getElementById('po-cat').value;
   const pallets=Math.floor(Math.abs(parseFloat(document.getElementById('po-pallets').value)||0));
+  const estDate=document.getElementById('po-est-date').value;
   const note=document.getElementById('po-note').value.trim();
   if(!date||!inv||!vendor||!shipper||pallets<=0){ showToast('Fill in all fields — date, invoice #, vendor, shipper, and pallets','err'); return; }
   if(S.orders.find(o=>o.invoiceNum===inv)){ showToast('Invoice # '+inv+' already exists','err'); return; }
-  S.orders.push({id:uid(),invoiceNum:inv,date,vendor,cat,shipper,palletsOrdered:pallets,note,store:S.store,closed:false,ts:Date.now()});
+  S.orders.push({id:uid(),invoiceNum:inv,date,estDate,vendor,cat,shipper,palletsOrdered:pallets,note,store:S.store,closed:false,ts:Date.now()});
   S.orders.sort((a,b)=>b.date.localeCompare(a.date)||b.ts-a.ts);
-  ['po-inv','po-vendor','po-shipper','po-pallets','po-note'].forEach(id=>{ document.getElementById(id).value=''; });
-  save(); renderOrdersList();
+  ['po-inv','po-vendor','po-shipper','po-pallets','po-note','po-est-date'].forEach(id=>{ document.getElementById(id).value=''; });
+  save(); renderOrdersList(); closeSheet('neworder');
   toast('PO '+inv+' created');
 }
 
@@ -1445,18 +1476,21 @@ function renderOrderDetail(invoiceNum){
   const remaining=o.palletsOrdered-totalRecvd;
   let html='<button class="detail-back" onclick="showOrdersList()">'+
     '<svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> All Orders</button>';
+  if(!o.closed&&st!=='Complete'&&remaining>0)
+    html+='<button class="btn btn-a" style="margin-bottom:14px" onclick="document.getElementById(\'rcpt-date\').scrollIntoView({behavior:\'smooth\'})">&#128230; Log Delivery ('+remaining+' pal remaining)</button>';
   html+='<div class="detail-hd">'+
     '<div class="detail-inv">'+o.invoiceNum+' &nbsp;'+poStatusPill(st)+'</div>'+
     '<div class="detail-vendor">'+o.vendor+'</div>'+
   '</div>'+
   '<div class="detail-body">'+
     '<div class="detail-grid">'+
-      '<div><div class="detail-lbl">Date</div><div class="detail-val">'+o.date+'</div></div>'+
+      '<div><div class="detail-lbl">Order Date</div><div class="detail-val">'+o.date+'</div></div>'+
       '<div><div class="detail-lbl">Store</div><div class="detail-val">'+o.store+'</div></div>'+
       '<div><div class="detail-lbl">Category</div><div class="detail-val">'+o.cat+'</div></div>'+
       '<div><div class="detail-lbl">Shipper</div><div class="detail-val">'+o.shipper+'</div></div>'+
       '<div><div class="detail-lbl">Pallets Ordered</div><div class="detail-val" style="color:var(--blue)">'+o.palletsOrdered+'</div></div>'+
       '<div><div class="detail-lbl">Pallets Received</div><div class="detail-val" style="color:'+(totalRecvd>=o.palletsOrdered?'var(--green-dark)':'var(--amber)')+'">'+totalRecvd+'</div></div>'+
+      (o.estDate?'<div><div class="detail-lbl">Est. Delivery</div><div class="detail-val" style="color:var(--amber)">'+o.estDate+'</div></div>':'')+
     '</div>'+
     (o.note?'<div style="font-size:12px;color:var(--muted);font-weight:500">'+o.note+'</div>':'')+
   '</div>';
@@ -1687,8 +1721,9 @@ function renderBalance(){
     html+='</tbody></table></div></div></div>';
   }
 
-  // Per-store back stock
-  STORES.forEach(store=>{
+  // Per-store back stock — current store first
+  const storeOrder=[S.store,...STORES.filter(s=>s!==S.store)];
+  storeOrder.forEach(store=>{
     const cs=catSummary(store);
     const aCats=CATS.filter(c=>cs[c].recv||cs[c].tin||cs[c].tout||cs[c].proc);
     if(!aCats.length) return;
