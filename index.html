@@ -259,6 +259,24 @@ ol.inst strong{color:var(--black);font-weight:700}
 .tgt-lbl{flex:1;font-size:13px;font-weight:600}
 .tgt-inp{width:68px;padding:7px 8px;border:2px solid rgba(0,0,0,.12);border-radius:var(--radius-sm);font-family:'Barlow',sans-serif;font-size:15px;font-weight:800;text-align:center;background:var(--surface);color:var(--black);-webkit-appearance:none;outline:none}
 .tgt-inp:focus{border-color:var(--pink)}
+/* ACTION ROW */
+.action-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.action-btn{background:var(--surface);border-radius:var(--radius);border:3px solid var(--green);padding:14px 8px;font-family:'Barlow',sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--black);-webkit-appearance:none;transition:opacity .15s}
+.action-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.action-btn.recv{border-color:var(--pink);color:var(--pink)}
+.action-btn.floor{border-color:var(--amber);color:var(--amber)}
+.action-btn.xfer{border-color:var(--blue);color:var(--blue)}
+.action-btn:active{opacity:.75;transform:scale(0.96)}
+/* BOTTOM SHEETS */
+.sht-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:flex-end;justify-content:center}
+.sht-overlay.open{display:flex}
+.sht-panel{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:0 20px calc(24px + env(safe-area-inset-bottom,16px));max-height:94vh;overflow-y:auto}
+.sht-panel.p-top{border-top:4px solid var(--pink)}
+.sht-panel.a-top{border-top:4px solid var(--amber)}
+.sht-handle{width:40px;height:4px;background:rgba(0,0,0,.15);border-radius:2px;margin:16px auto 14px}
+.sht-title{font-size:15px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;margin-bottom:18px}
+.sht-title.recv{color:var(--pink)}
+.sht-title.floor{color:var(--amber)}
 </style>
 </head>
 <body>
@@ -306,34 +324,19 @@ ol.inst strong{color:var(--black);font-weight:700}
     <div class="screen active" id="screen-inventory">
       <div class="mgrid3" id="inv-metrics"></div>
 
-      <div class="card p-brd">
-        <div class="ctitle p">Receive Items → Back Inventory</div>
-        <div class="frow2 fg">
-          <div><label class="flbl">Date received</label><input type="date" class="fi" id="r-date" onchange="validateRDate()"></div>
-          <div><label class="flbl">Category</label><select class="fs" id="r-cat">CATOPTS</select></div>
-        </div>
-        <div class="fg">
-          <label class="flbl">Quantity received</label>
-          <input type="number" class="fi" id="r-qty" min="1" placeholder="0" inputmode="numeric" oninput="validateRQty()">
-          <div id="r-qty-hint" class="avail-hint"></div>
-        </div>
-        <div class="fg"><label class="flbl">Note (optional)</label><input type="text" class="fi" id="r-note" placeholder="e.g. Friday pallet"></div>
-        <button class="btn btn-p" id="r-submit" onclick="addRecv()">+ Receive into Back Inventory</button>
-      </div>
-
-      <div class="card a-brd">
-        <div class="ctitle a">Process: Back → Front Floor</div>
-        <div class="frow2 fg">
-          <div><label class="flbl">Date processed</label><input type="date" class="fi" id="p-date" onchange="validatePDate()"></div>
-          <div><label class="flbl">Category</label><select class="fs" id="p-cat" onchange="updateProcHint()">CATOPTS</select></div>
-        </div>
-        <div class="fg">
-          <label class="flbl">Quantity processed</label>
-          <input type="number" class="fi" id="p-qty" min="1" placeholder="0" inputmode="numeric" oninput="updateProcHint()">
-          <div id="p-qty-hint" class="avail-hint show ok">Select a category to see available back inventory</div>
-        </div>
-        <div class="fg"><label class="flbl">Note (optional)</label><input type="text" class="fi" id="p-note" placeholder="e.g. Moved to floor Friday"></div>
-        <button class="btn btn-a" id="p-submit" onclick="addProc()">Move to Front Floor</button>
+      <div class="action-row">
+        <button class="action-btn recv" onclick="openSheet('receive')">
+          <svg viewBox="0 0 24 24"><path d="M12 2v13M5 9l7 7 7-7"/><path d="M5 21h14"/></svg>
+          Receive
+        </button>
+        <button class="action-btn floor" onclick="openSheet('floor')">
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M15 6l6 6-6 6"/></svg>
+          Move to Floor
+        </button>
+        <button class="action-btn xfer" onclick="go('transfer')">
+          <svg viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
+          Transfer
+        </button>
       </div>
 
       <div class="sdiv">Back inventory by category</div>
@@ -464,6 +467,50 @@ ol.inst strong{color:var(--black);font-weight:700}
   </div>
 </div>
 
+<!-- Receive Sheet -->
+<div class="sht-overlay" id="sht-receive" onclick="closeSheet('receive',event)">
+  <div class="sht-panel p-top">
+    <div class="sht-handle"></div>
+    <div class="sht-title recv">Receive into Back Inventory</div>
+    <div class="frow2 fg">
+      <div><label class="flbl">Date received</label><input type="date" class="fi" id="r-date" onchange="validateRDate()"></div>
+      <div><label class="flbl">Category</label><select class="fs" id="r-cat">CATOPTS</select></div>
+    </div>
+    <div class="fg">
+      <label class="flbl">Quantity received</label>
+      <input type="number" class="fi" id="r-qty" min="1" placeholder="0" inputmode="numeric" oninput="validateRQty()">
+      <div id="r-qty-hint" class="avail-hint"></div>
+    </div>
+    <div class="fg"><label class="flbl">Note (optional)</label><input type="text" class="fi" id="r-note" placeholder="e.g. Friday pallet"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button class="btn btn-d" onclick="closeSheet('receive')">Cancel</button>
+      <button class="btn btn-p" id="r-submit" onclick="addRecv()">+ Receive</button>
+    </div>
+  </div>
+</div>
+
+<!-- Move to Floor Sheet -->
+<div class="sht-overlay" id="sht-floor" onclick="closeSheet('floor',event)">
+  <div class="sht-panel a-top">
+    <div class="sht-handle"></div>
+    <div class="sht-title floor">Move to Front Floor</div>
+    <div class="frow2 fg">
+      <div><label class="flbl">Date</label><input type="date" class="fi" id="p-date" onchange="validatePDate()"></div>
+      <div><label class="flbl">Category</label><select class="fs" id="p-cat" onchange="updateProcHint()">CATOPTS</select></div>
+    </div>
+    <div class="fg">
+      <label class="flbl">Quantity</label>
+      <input type="number" class="fi" id="p-qty" min="1" placeholder="0" inputmode="numeric" oninput="updateProcHint()">
+      <div id="p-qty-hint" class="avail-hint show ok">Select a category to see available back inventory</div>
+    </div>
+    <div class="fg"><label class="flbl">Note (optional)</label><input type="text" class="fi" id="p-note" placeholder="e.g. Moved to floor Friday"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button class="btn btn-d" onclick="closeSheet('floor')">Cancel</button>
+      <button class="btn btn-a" id="p-submit" onclick="addProc()">Move to Floor</button>
+    </div>
+  </div>
+</div>
+
 <!-- Store Picker -->
 <div class="overlay" id="overlay" onclick="closePicker(event)">
   <div class="sheet">
@@ -579,6 +626,17 @@ let orderDetailInvoice=null, showClosed=false;
 
 function save(){ try{ localStorage.setItem('kb9',JSON.stringify(S)); }catch(e){} }
 function load(){ try{ const d=localStorage.getItem('kb9'); if(d) S={...S,...JSON.parse(d)}; }catch(e){} }
+
+function openSheet(name){
+  const el=document.getElementById('sht-'+name);
+  if(el) el.classList.add('open');
+  if(name==='floor') setTimeout(updateProcHint,50);
+}
+function closeSheet(name,e){
+  if(e&&e.target!==e.currentTarget) return;
+  const el=document.getElementById('sht-'+name);
+  if(el) el.classList.remove('open');
+}
 
 load();
 setToday('r-date'); setToday('p-date'); setToday('t-date'); setToday('po-date');
@@ -911,6 +969,7 @@ function _doAddRecv(date,cat,qty,note){
   document.getElementById('r-qty').value='';
   document.getElementById('r-note').value='';
   save(); renderInventory(); setTimeout(updateProcHint,50);
+  closeSheet('receive');
   toast('+'+qty+' '+cat+' → back inventory');
 }
 
@@ -938,6 +997,7 @@ function _doAddProc(date,cat,qty,note){
   document.getElementById('p-qty').value='';
   document.getElementById('p-note').value='';
   save(); renderInventory(); setTimeout(updateProcHint,50);
+  closeSheet('floor');
   toast(qty+' '+cat+' → front floor');
 }
 
