@@ -312,9 +312,9 @@ ol.inst strong{color:var(--black);font-weight:700}
       <svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
       Reports
     </button>
-    <button class="nb" id="nb-export" onclick="go('export')">
-      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-      Export
+    <button class="nb" onclick="openSheet('settings')" style="border-top-color:transparent">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Settings
     </button>
   </div>
 
@@ -464,6 +464,42 @@ ol.inst strong{color:var(--black);font-weight:700}
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- Settings Sheet -->
+<div class="sht-overlay" id="sht-settings" onclick="closeSheet('settings',event)">
+  <div class="sht-panel" style="border-top:4px solid var(--green);max-height:92vh">
+    <div class="sht-handle"></div>
+    <div class="sht-title" style="color:var(--green-dark)">Settings</div>
+    <div class="ctitle g">Google Sheets Export</div>
+    <div style="font-size:11px;color:var(--muted);font-weight:500;margin:-8px 0 12px;line-height:1.5">Auto-sends every Thursday at 5pm</div>
+    <div class="fg">
+      <label class="flbl">Apps Script URL</label>
+      <input type="url" class="fi" id="surl" placeholder="https://script.google.com/macros/s/..." oninput="saveUrl()">
+      <p style="font-size:11px;color:var(--muted);margin-top:7px;line-height:1.5;font-weight:500">Paste your deployed Google Apps Script URL to connect your master sheet.</p>
+    </div>
+    <div id="nxt" class="nxt">Calculating next export...</div>
+    <button class="btn btn-g" onclick="runExport(true)" style="margin-bottom:14px">Export to Google Sheets Now</button>
+    <div class="ctitle g" style="margin-top:4px">Export History</div>
+    <div id="ehist"><p style="font-size:13px;color:var(--muted);text-align:center;padding:10px;font-weight:600">No exports yet</p></div>
+    <div class="ctitle g" style="margin-top:14px">Invoice Scanning</div>
+    <div class="fg">
+      <label class="flbl">OpenAI API Key</label>
+      <input type="password" class="fi" id="okey" placeholder="sk-..." oninput="saveOpenaiKey()" autocomplete="off">
+      <p style="font-size:11px;color:var(--muted);margin-top:7px;line-height:1.5;font-weight:500">Get a key at <strong>platform.openai.com</strong> &mdash; ~$0.001 per scan. Stored only on this device.</p>
+    </div>
+    <div class="ctitle g" style="margin-top:4px">Apps Script Setup</div>
+    <ol class="inst">
+      <li>Go to <strong>script.google.com</strong></li>
+      <li>Create a new project</li>
+      <li>Paste the Apps Script code below</li>
+      <li>Deploy &rarr; New deployment &rarr; Web app</li>
+      <li>Set access to <strong>Anyone</strong></li>
+      <li>Copy the URL and paste above</li>
+    </ol>
+    <div class="scrbox" id="scrbox"></div>
+    <button class="btn btn-d" style="margin-top:12px;margin-bottom:0" onclick="copyScript()">Copy Apps Script Code</button>
   </div>
 </div>
 
@@ -631,6 +667,7 @@ function openSheet(name){
   const el=document.getElementById('sht-'+name);
   if(el) el.classList.add('open');
   if(name==='floor') setTimeout(updateProcHint,50);
+  if(name==='settings'){ updateNxt(); renderHist(); }
 }
 function closeSheet(name,e){
   if(e&&e.target!==e.currentTarget) return;
