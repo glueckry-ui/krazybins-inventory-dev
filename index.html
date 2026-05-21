@@ -333,7 +333,7 @@ ol.inst strong{color:var(--black);font-weight:700}
           <svg viewBox="0 0 24 24"><path d="M5 12h14M15 6l6 6-6 6"/></svg>
           Move to Floor
         </button>
-        <button class="action-btn xfer" onclick="go('transfer')">
+        <button class="action-btn xfer" onclick="openSheet('transfer')">
           <svg viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
           Transfer
         </button>
@@ -353,24 +353,6 @@ ol.inst strong{color:var(--black);font-weight:700}
 
     <!-- TRANSFER -->
     <div class="screen" id="screen-transfer">
-      <div class="card b-brd">
-        <div class="ctitle b">Transfer Between Stores</div>
-        <div class="frow2 fg">
-          <div><label class="flbl">From store</label><select class="fs" id="t-from" onchange="updateXferHint()">STOREOPTS</select></div>
-          <div><label class="flbl">To store</label><select class="fs" id="t-to" onchange="updateXferHint()">STOREOPTS</select></div>
-        </div>
-        <div class="frow2 fg">
-          <div><label class="flbl">Date</label><input type="date" class="fi" id="t-date" onchange="validateTDate()"></div>
-          <div><label class="flbl">Category</label><select class="fs" id="t-cat" onchange="updateXferHint()">CATOPTS</select></div>
-        </div>
-        <div class="fg">
-          <label class="flbl">Quantity</label>
-          <input type="number" class="fi" id="t-qty" min="1" placeholder="0" inputmode="numeric" oninput="updateXferHint()">
-          <div id="t-hint" class="avail-hint show ok">Select From store and category to see availability</div>
-        </div>
-        <div class="fg"><label class="flbl">Note (optional)</label><input type="text" class="fi" id="t-note" placeholder="e.g. Excess furniture to Parma"></div>
-        <button class="btn btn-b" id="t-submit" onclick="addTransfer()">Transfer Items</button>
-      </div>
       <div class="sdiv">Transfer history</div>
       <div id="transfer-log"></div>
     </div>
@@ -500,6 +482,32 @@ ol.inst strong{color:var(--black);font-weight:700}
     </ol>
     <div class="scrbox" id="scrbox"></div>
     <button class="btn btn-d" style="margin-top:12px;margin-bottom:0" onclick="copyScript()">Copy Apps Script Code</button>
+  </div>
+</div>
+
+<!-- Transfer Sheet -->
+<div class="sht-overlay" id="sht-transfer" onclick="closeSheet('transfer',event)">
+  <div class="sht-panel" style="border-top:4px solid var(--blue)">
+    <div class="sht-handle"></div>
+    <div class="sht-title" style="color:var(--blue)">Transfer Between Stores</div>
+    <div class="frow2 fg">
+      <div><label class="flbl">From store</label><select class="fs" id="t-from" onchange="updateXferHint()">STOREOPTS</select></div>
+      <div><label class="flbl">To store</label><select class="fs" id="t-to" onchange="updateXferHint()">STOREOPTS</select></div>
+    </div>
+    <div class="frow2 fg">
+      <div><label class="flbl">Date</label><input type="date" class="fi" id="t-date" onchange="validateTDate()"></div>
+      <div><label class="flbl">Category</label><select class="fs" id="t-cat" onchange="updateXferHint()">CATOPTS</select></div>
+    </div>
+    <div class="fg">
+      <label class="flbl">Quantity</label>
+      <input type="number" class="fi" id="t-qty" min="1" placeholder="0" inputmode="numeric" oninput="updateXferHint()">
+      <div id="t-hint" class="avail-hint show ok">Select From store and category to see availability</div>
+    </div>
+    <div class="fg"><label class="flbl">Note (optional)</label><input type="text" class="fi" id="t-note" placeholder="e.g. Excess furniture to Parma"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button class="btn btn-d" onclick="closeSheet('transfer')">Cancel</button>
+      <button class="btn btn-b" id="t-submit" onclick="addTransfer()">Transfer Items</button>
+    </div>
   </div>
 </div>
 
@@ -667,6 +675,7 @@ function openSheet(name){
   const el=document.getElementById('sht-'+name);
   if(el) el.classList.add('open');
   if(name==='floor') setTimeout(updateProcHint,50);
+  if(name==='transfer'){ syncXferFrom(); setTimeout(updateXferHint,50); }
   if(name==='settings'){ updateNxt(); renderHist(); }
 }
 function closeSheet(name,e){
@@ -1115,6 +1124,7 @@ function _doTransfer(from,to,date,cat,qty,note){
   document.getElementById('t-qty').value='';
   document.getElementById('t-note').value='';
   save(); renderTransferLog(); renderInventory(); setTimeout(updateXferHint,50);
+  closeSheet('transfer');
   toast(qty+' '+cat+': '+from+' \u2192 '+to);
 }
 
